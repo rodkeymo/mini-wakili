@@ -1,0 +1,53 @@
+# Bills of Exchange Act (Cap. 27) — Kenya (key excerpts)
+
+Part I – PRELIMINARY
+
+1. Short title
+This Act may be cited as the Bills of Exchange Act.
+
+2. Interpretation
+In this Act, unless the context otherwise requires, expressions defined in the Act have the meanings assigned to them, including definitions relating to bills, notes, cheques, acceptance, endorsement, holder, and related concepts.
+
+Part II – BILLS OF EXCHANGE
+
+3. Bill of exchange defined
+A bill of exchange is an unconditional order in writing, addressed by one person to another, signed by the person giving it, requiring the person to whom it is addressed to pay on demand or at a fixed or determinable future time a sum certain in money to or to the order of a specified person, or to bearer.
+
+4. Inland and foreign bills
+(1) An inland bill is a bill which is or on the face of it purports to be—
+(a) both drawn and payable within Kenya; or
+(b) drawn within Kenya upon some person resident therein.
+Any other bill is a foreign bill.
+(2) Unless the contrary appear on the face of the bill the holder may treat it as an inland bill.
+
+8. What bills are negotiable
+(1) When a bill contains words prohibiting transfer, or indicating an intention that it should not be transferable, it is valid as between the parties thereto, but is not negotiable.
+(2) A negotiable bill may be payable either to order or to bearer.
+(3) A bill is payable to order which is expressed to be so payable, or which is expressed to be payable to a particular person, and does not contain words prohibiting transfer or indicating an intention that it should not be transferable.
+(4) Where a bill, either originally or by endorsement, is expressed to be payable to the order of a specified person, and not to him or his order, it is nevertheless payable to him or his order at his option.
+(5) A bill is payable to bearer which is expressed to be so payable, or on which the only or last endorsement is an endorsement in blank.
+
+10. Bill payable on demand
+(1) A bill is payable on demand—
+(a) which is expressed to be payable on demand, or at sight, or on presentation; or
+(b) in which no time for payment is expressed.
+(2) Where a bill is accepted or endorsed when it is overdue, it shall, as regards the acceptor who so accepts, or any endorser who so endorses it, be deemed a bill payable on demand.
+
+29. Holder in due course
+(1) A holder in due course is a holder who has taken a bill, complete and regular on the face of it, under the following conditions, namely—
+(a) that he became the holder of it before it was overdue, and without notice that it had previously been dishonoured, if such was the fact;
+(b) that he took the bill in good faith and for value, and that at the time the bill was negotiated to him he had no notice of any defect in the title of the person who negotiated it.
+(2) In particular the title of a person who negotiates a bill is defective within the meaning of this Act when he obtained the bill, or the acceptance thereof, by fraud, duress, or force and fear, or other unlawful means, or for an illegal consideration, or when he negotiates it in breach of faith, or under such circumstances as amount to a fraud.
+
+Part III – CHEQUES ON A BANKER
+
+73. Cheque defined
+A cheque is a bill of exchange drawn on a banker payable on demand.
+
+74. Presentment of cheque for payment
+Subject to the provisions of this Act—
+(a) where a cheque is not presented for payment within a reasonable time of its issue, and the drawer or the person on whose account it is drawn had the right at the time of presentment as between him and the banker to have the cheque paid and suffers actual damage through the delay, he is discharged to the extent of such damage;
+(b) in determining what is a reasonable time regard shall be had to the nature of the instrument, the usage of trade and of bankers, and the facts of the particular case.
+
+80. Protection to banker and drawer where cheque is crossed
+Where a banker, in good faith and without negligence, pays a cheque drawn on him which is crossed generally or specially, and the cheque is paid to a banker (in the case of a special crossing, to the banker to whom it is crossed or his agent for collection), the banker paying the cheque and, if the cheque has come into the hands of the payee, the drawer shall respectively be entitled to the same rights and be placed in the same position as if payment of the cheque had been made to the true owner thereof.

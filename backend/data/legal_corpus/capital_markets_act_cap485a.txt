@@ -1,0 +1,32 @@
+# Capital Markets Act (Cap. 485A) — Kenya (key excerpts)
+
+1. Short title
+This Act may be cited as the Capital Markets Act.
+
+2. Interpretation (selected definitions)
+"Authority" means the Capital Markets Authority established by section 5;
+"beneficial owner" means a natural person who, whether alone or with associates, is the ultimate owner or controller of a legal person or arrangement;
+"capital market instrument" means any long-term financial instrument whether in the form of debt, equity or hybrid, issued or proposed to be issued to the public or a section of the public;
+"Compensation Fund" means the Investor Compensation Fund established by section 18;
+"securities" includes shares, debt securities, derivatives and other instruments as defined in the Act;
+"self-regulatory organization" means a body that regulates its members under rules approved by the Authority.
+
+Part relating to the Authority
+
+5. Establishment of the Authority
+There is established an Authority to be known as the Capital Markets Authority which shall be a body corporate with perpetual succession and a common seal.
+
+Functions and powers of the Authority include licensing, regulation of securities exchanges and intermediaries, protection of investors, promotion of market integrity, and enforcement of the Act and regulations made under it.
+
+Public offers and prospectuses
+An offer of securities to the public (a "public offer") includes an offer to any section of the public in Kenya, however selected. Certain offers are not considered public offers (e.g. offers to qualified investors under prescribed conditions).
+A person who makes a public offer of securities shall comply with prospectus and disclosure requirements prescribed by the Authority. False or misleading statements in a prospectus attract civil and criminal liability.
+
+Insider trading
+A person who deals in securities while in possession of inside information, or who discloses inside information otherwise than in the proper performance of duties, commits an offence. Penalties include fines and imprisonment on conviction.
+
+Licensing
+No person shall carry on the business of a securities broker, dealer, investment adviser, fund manager or other regulated activity without a licence issued by the Authority. The Authority may suspend or revoke a licence for misconduct, insolvency, or breach of the Act or regulations.
+
+Investor Compensation Fund
+The Investor Compensation Fund is established to compensate investors who suffer pecuniary loss as a result of the failure of a licensed person to meet contractual obligations.

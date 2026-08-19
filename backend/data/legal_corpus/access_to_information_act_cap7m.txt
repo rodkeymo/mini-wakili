@@ -1,0 +1,45 @@
+# Access to Information Act (Cap. 7M) — Kenya (key excerpts)
+
+1. Short title
+This Act may be cited as the Access to Information Act.
+
+2. Interpretation
+In this Act, unless the context otherwise requires—
+"citizen" means any individual who has Kenyan citizenship, and any private entity that is controlled by one or more Kenyan citizens;
+"Commission" means the Commission on Administrative Justice established by section 3 of the Commission on Administrative Justice Act (Cap. 7J);
+"exempt information" means information that may be withheld by a public entity or private body in accordance with section 6;
+"information" includes all records held by a public entity or a private body, regardless of the form in which the information is stored, its source or the date of production;
+"information access officer" means any officer of a public entity or private body designated under section 7 as such for purposes of this Act;
+"personal information" means information about an identifiable individual, including information relating to the race, gender, sex, pregnancy, marital status, national, ethnic or social origin, colour, age, physical, psychological or mental health, well-being, disability, religion, conscience, belief, culture, language and birth of the individual; information relating to the education or the medical, criminal or employment history of the individual; any identifying number, symbol or other particular assigned to the individual; contact details of an individual; and related categories.
+
+3. Object and purpose of the Act
+The object and purpose of this Act is to—
+(a) give effect to the right of access to information by citizens as provided under Article 35 of the Constitution;
+(b) provide a framework for public entities and private bodies to proactively disclose information that they hold and to provide information on request in line with the constitutional principles;
+(c) provide a framework to facilitate access to information held by private bodies in compliance with any right protected by the Constitution and any other law;
+(d) promote routine and systematic information disclosure by public entities and private bodies on constitutional and statutory requirements while protecting certain information in line with the Constitution;
+(e) provide for the protection of persons who disclose information of public interest in good faith; and
+(f) provide a framework to facilitate public education on the right to access information under this Act.
+
+4. Right to information
+(1) Subject to this Act and any other written law, every citizen has the right of access to information held by—
+(a) the State; and
+(b) another person and required for the exercise or protection of any right or fundamental freedom.
+(2) Subject to this Act, every citizen's right to access information is not affected by—
+(a) any reason the person gives for seeking access; or
+(b) the public entity's belief as to what are the person's reasons for seeking access.
+(3) Access to information held by a public entity or a private body shall be provided expeditiously at a reasonable cost.
+(4) This Act shall be interpreted and applied on the basis of a duty to disclose and non-disclosure shall be permitted only in circumstances exempted under section 6.
+(5) Nothing in this Act limits or otherwise restricts any other legislative requirement for a public entity or private body to disclose information.
+
+6. Limitation of right of access to information
+(1) Pursuant to Article 24 of the Constitution, the right of access to information under Article 35 of the Constitution shall be limited in respect of information whose disclosure is likely to—
+(a) undermine the national security of Kenya;
+(b) impede the due process of law;
+(c) endanger the safety, health or life of any person;
+(d) involve the unwarranted invasion of the privacy of an individual, other than the applicant or the person on whose behalf an application has been made;
+(e) substantially prejudice the commercial interests, including intellectual property rights, of that entity or third party from whom information was obtained;
+(f) cause substantial harm to the ability of the Government to manage the economy of Kenya;
+(g) significantly undermine a public or private entity's ability to give adequate and judicious consideration to a matter concerning which no final decision has been made and which remains the subject of active consideration;
+(h) damage a public entity's position in any actual or contemplated legal proceedings; or
+(i) infringe professional confidentiality as recognised in law or by the rules of a registered association of a profession.

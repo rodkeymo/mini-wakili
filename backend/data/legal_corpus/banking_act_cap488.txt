@@ -1,0 +1,58 @@
+# Banking Act (Cap. 488) — Kenya (key excerpts)
+
+Part I – PRELIMINARY
+
+1. Short title
+This Act may be cited as the Banking Act.
+
+2. Interpretation
+(1) In this Act, unless the context otherwise requires—
+"bank" means a company which carries on, or proposes to carry on, banking business in Kenya but does not include the Central Bank;
+"banking business" means—
+(a) the accepting from members of the public of money on deposit repayable on demand or at the expiry of a fixed period or after notice;
+(b) the accepting from members of the public of money on current account and payment on and acceptance of cheques;
+(c) the employing of money held on deposit or on current account, or any part of the money, by lending, investment or in any other manner for the account and at the risk of the person so employing the money; and
+(d) such other business activity as the Central Bank may prescribe;
+"core capital" means permanent shareholders' equity in the form of issued and fully paid-up shares of common stock, or in the case of foreign incorporated banks, of the assigned capital, plus all disclosed reserves, less goodwill or any other intangible assets;
+"institution" means a bank or financial institution or a mortgage finance company;
+"licence" means a licence granted under section 5;
+"significant shareholder" means a person including a beneficial owner, other than the Government or public entity, who holds, directly or indirectly, or otherwise has a beneficial interest amounting to five per cent or more of the share capital of an institution;
+"the Central Bank" means the Central Bank of Kenya established by the Central Bank of Kenya Act (Cap. 491);
+"total capital" means the total sum of core capital and supplementary capital.
+
+Part II – LICENSING OF INSTITUTIONS
+
+3. Restrictions on carrying on banking business, etc.
+(1) No person shall in Kenya—
+(a) transact any banking business or financial business or the business of a mortgage finance company unless it is an institution or a duly approved agency conducting banking business on behalf of an institution which holds a valid licence;
+(b) unless it is a bank and has obtained the consent of the Central Bank, use the word "bank" or any of its derivatives in the name, description or title under which it transacts business in Kenya;
+(c) unless it is a financial institution or mortgage finance company and has obtained the consent of the Central Bank, use the word "finance" or any of its derivatives in the name under which it transacts business in Kenya.
+(2) Any person who contravenes subsection (1) shall be guilty of an offence and liable to a fine not exceeding one hundred thousand shillings or to imprisonment for a term not exceeding three years or to both.
+
+4. Application for licence
+(1) Every institution intending to transact banking business, financial business or the business of a mortgage finance company in Kenya shall, before commencing such business, apply in writing to the Central Bank for a licence.
+(3) The Central Bank shall, where it is satisfied as to the professional and moral suitability of persons proposed to manage or control the institution, certify that such persons are fit and proper persons to manage or control the institution.
+(5) In considering an application for a licence, the Central Bank may require to be satisfied as to—
+(a) the financial condition and history of the institution;
+(b) the character of its management;
+(c) the professional and moral suitability of the persons proposed to manage or control the institution;
+(d) the adequacy of its capital structure and earning prospects;
+(e) the convenience and needs of the area to be served; and
+(f) the public interest which will be served by the granting of the licence.
+
+5. Licensing of institutions
+(1) Subject to section 4, the Central Bank may, upon payment of the prescribed fee, grant a licence to an institution to carry on business.
+(2) The Central Bank may endorse on a licence granted under this section such conditions as the Central Bank considers necessary and may from time to time add, vary or substitute such conditions.
+(2A) An institution which fails to commence business in Kenya within twelve months of the grant of a licence under this section shall, if it still proposes to transact business in Kenya, make fresh application under section 4.
+(3) A licence issued under this section shall remain valid unless revoked under section 6.
+(4) An institution shall pay annual fees in such amount and in such manner as the Central Bank may prescribe.
+
+6. Revocation of licence
+(1) The Central Bank may, by notice in writing to the institution, revoke a licence if the institution—
+(a) ceases to carry on business in Kenya or goes into liquidation or is wound up or is otherwise dissolved; or
+(b) fails to comply with this Act, the Central Bank of Kenya Act (Cap. 491), or any rules, regulations, orders or directions issued under any of those Acts or any condition of a licence:
+Provided that the Central Bank, before revoking a licence, shall give to the institution not less than twenty-eight days' notice in writing of the Central Bank's intention, and shall consider any representations made to the Central Bank in writing by the institution within that period before revoking the licence.
+
+7. Minimum capital requirements
+(1) A licence shall not be granted to an institution unless the institution meets the minimum capital requirements specified in the Second Schedule.
+(2) The Cabinet Secretary may, by order published in the Gazette, amend the Second Schedule.
