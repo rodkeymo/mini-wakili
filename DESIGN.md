@@ -38,32 +38,8 @@ Chroma vector store  ←  legal_corpus (Kenyan statutes only)
 | Choice | Rationale | Trade-off |
 |--------|-----------|-----------|
 | Statute excerpts only | Focused, auditable grounding for the take-home | Not the full text of every Act |
-| Chroma (local) | Zero-infra | Swap for Azure AI Search / Pinecone in production |
-| Deterministic grounded answerer (no API key required) | Runs offline for evaluation | Replace with LLM call when keys available |
-| Simple control loop (not full LangGraph runtime) | Easy to read and defend line-by-line | Same nodes can be dropped into LangGraph later |
-| No n8n | Simpler deliverable | HITL must be implemented in UI/backend later |
-
-## 4. What was deliberately left out (time budget)
-
-- Full OCR / layout-aware PDF pipeline (excerpts used instead)
-- Cross-encoder re-ranker
-- Strong NLI entailment check on every citation
-- Multi-tenancy / matter isolation
-- Persistent conversation memory
-- Full text of every page of every statute
-
-## 5. How this would be hardened for bank use
-
-1. **Data residency** — LLM inside bank Azure tenancy (private endpoint) or on-prem open model.
-2. **Corpus** — full approved, versioned statutes + internal policies; every chunk carries `status`, `effective_date`, `source_hash`.
-3. **Audit trail** — request ID, user, matter_id, retrieved set, model I/O, confidence, human approver; retain ≥ 5 years.
-4. **Human-in-the-loop** — product never exposes a “skip review” path for anything relied upon.
-5. **Citation faithfulness** — secondary entailment model rejects unsupported claims.
-6. **Isolation** — retrieval filtered by `matter_id`; no cross-matter memory.
-7. **Observability** — structured logs, evaluation harness (Recall@k, citation precision).
-
-## 6. Measuring retrieval quality
-
+| Chroma (local) | Zero-infra | Swap for Azure AI Search / Pinecone in production
+| Simple control loop (not full LangGraph runtime) | Easy to read and defend line-by-line | Same nodes can be dropped into LangGraph later 
 ```bash
 cd backend && python ../scripts/evaluate_retrieval.py
 ```
