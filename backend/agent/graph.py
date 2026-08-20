@@ -39,6 +39,12 @@ def run_agent(question: str) -> Dict[str, Any]:
         if state.get("status") == "refused":
             return _final(state, steps)
 
+        if state.get("skip_rag"):
+            steps.append(
+                {"id": "smalltalk", "label": "Greeting — skipped retrieval", "status": "done"}
+            )
+            return _final(state, steps)
+
         for round_i in range(2):
             label = (
                 "Searching the legal corpus"
@@ -109,11 +115,15 @@ def run_agent(question: str) -> Dict[str, Any]:
 def _final(state: AgentState, steps: List[Dict[str, Any]]) -> Dict[str, Any]:
     status = state.get("status") or "ok"
     citations = state.get("citations") or []
+    answer = state.get("answer")
+
+    if state.get("skip_rag") or status != "ok" or not answer:
+        citations = []
     if status != "ok":
         citations = []
 
     return {
-        "answer": state.get("answer"),
+        "answer": answer,
         "citations": citations,
         "confidence": float(state.get("confidence") or 0.0),
         "status": status,

@@ -21,3 +21,4 @@ class AgentState(TypedDict, total=False):
     matter_id: str
     session_id: str
     memory_text: str
+    skip_rag: bool

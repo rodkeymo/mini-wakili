@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from agent.state import AgentState
 from agent.tools import search_legal_corpus, refine_query
-from safety.moderators import moderate_input, moderate_output
+from safety.moderators import moderate_input, moderate_output, is_greeting_or_smalltalk
 from safety.confidence import compute_confidence, should_refuse
 from rag.topics import list_corpus_topics
 
@@ -16,7 +16,13 @@ RETRIEVAL_THRESHOLD = 0.42
 MAX_ATTEMPTS = 2
 REFUSAL_PHRASE = "I cannot answer from the available approved sources."
 
-SYSTEM_PROMPT = """You are Wakili, a legal research assistant for a Kenyan bank.
+GREETING_REPLY = (
+    "Hello — I'm Mini-Wakili, a legal research assistant for approved Kenyan statute sources. "
+    "Ask a question about the Acts in the corpus (for example banking licences, capital markets, "
+    "or foreign investment protection). I only answer from those sources and always cite them."
+)
+
+SYSTEM_PROMPT = """You are Wakili, a legal research assistant for a NCBA bank.
 Answer ONLY using the passages provided below.
 - Every factual statement must be followed by a citation in the form [source_id].
 - If the passages do not contain enough information, reply exactly:
@@ -121,12 +127,13 @@ def _refusal_state(state: AgentState, message: str) -> AgentState:
         "citations": [],
         "status": "low_confidence",
         "message": message,
-        "suggested_topics": list_corpus_topics(8),
+        "suggested_topics": [],
     }
 
 
 def node_moderate_input(state: AgentState) -> AgentState:
-    ok, reason = moderate_input(state["question"])
+    q = state["question"]
+    ok, reason = moderate_input(q)
     if not ok:
         return {
             **state,
@@ -136,9 +143,23 @@ def node_moderate_input(state: AgentState) -> AgentState:
             "citations": [],
             "confidence": 0.0,
             "moderated_input": False,
-            "suggested_topics": list_corpus_topics(8),
+            "suggested_topics": [],
         }
-    return {**state, "moderated_input": True, "attempt": state.get("attempt", 0)}
+
+    if is_greeting_or_smalltalk(q):
+        return {
+            **state,
+            "status": "ok",
+            "answer": GREETING_REPLY,
+            "citations": [],
+            "confidence": 1.0,
+            "message": None,
+            "suggested_topics": list_corpus_topics(8),
+            "moderated_input": True,
+            "skip_rag": True,
+        }
+
+    return {**state, "moderated_input": True, "attempt": state.get("attempt", 0), "skip_rag": False}
 
 
 def node_retrieve(state: AgentState) -> AgentState:
@@ -173,7 +194,7 @@ def node_generate(state: AgentState) -> AgentState:
         return _refusal_state(
             state,
             "The corpus does not contain sufficiently relevant material "
-            "to answer safely. Please rephrase or ask about one of the topics below.",
+            "to answer safely. Please rephrase your question.",
         )
 
     answer = _llm_grounded_answer(state["question"], hits)
@@ -205,7 +226,7 @@ def node_verify_and_moderate(state: AgentState) -> AgentState:
         return {
             **state,
             "citations": [],
-            "suggested_topics": state.get("suggested_topics") or list_corpus_topics(8),
+            "suggested_topics": [],
         }
 
     answer = state.get("answer") or ""
@@ -231,7 +252,7 @@ def node_verify_and_moderate(state: AgentState) -> AgentState:
             "status": "refused",
             "message": reason,
             "moderated_output": False,
-            "suggested_topics": list_corpus_topics(8),
+            "suggested_topics": [],
         }
 
     return {
