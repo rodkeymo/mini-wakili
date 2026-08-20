@@ -38,15 +38,34 @@ function StopIcon({ size = 14, color = "currentColor" }) {
   );
 }
 
-/** Stages shown while the request is in flight (optimistic preview). */
-const LIVE_STAGES = [
-  "Checking input safety…",
-  "Searching the legal corpus…",
-  "Evaluating retrieval confidence…",
-  "Deciding whether to search again…",
-  "Drafting grounded answer…",
-  "Verifying citations…",
+/** Stages shown while the request is in flight are streamed live from the
+ *  backend via GET /predict/stream (Server-Sent Events).
+ *
+ *  Between SSE frames — and to work around any buffering — the UI also
+ *  optimistically marks the *next* expected step as "running" right after
+ *  the previous step completes. The backend's real "done" event then replaces
+ *  the placeholder with the authoritative label + confidence detail.
+ *
+ *  STEP_SCRIPT is the ordered list of what the backend *could* emit. It's
+ *  used only for the optimistic "running" preview row; rows that never get a
+ *  real "done" event (e.g. retrieve_1 / decide_1 on a one-pass answer) are
+ *  never shown.
+ */
+const STEP_SCRIPT = [
+  { id: "moderate",   label: "Checking input safety" },
+  { id: "smalltalk",  label: "Greeting — skipped retrieval" },
+  { id: "retrieve_0", label: "Searching the legal corpus" },
+  { id: "decide_0",   label: "Evaluating retrieval confidence" },
+  { id: "retrieve_1", label: "Searching again with refined query" },
+  { id: "decide_1",   label: "Evaluating refined retrieval confidence" },
+  { id: "generate",   label: "Drafting grounded answer" },
+  { id: "verify",     label: "Verifying citations & output safety" },
 ];
+
+const STEP_LABEL_BY_ID = STEP_SCRIPT.reduce((acc, s) => {
+  acc[s.id] = s.label;
+  return acc;
+}, {});
 
 function AgentActivity({ steps, liveLabel, loading }) {
   const list = steps?.length
@@ -78,16 +97,6 @@ function AgentActivity({ steps, liveLabel, loading }) {
             </span>
           </li>
         ))}
-        {loading && steps?.length > 0 && (
-          <li className="step step-running">
-            <span className="step-icon">
-              <span className="spinner" />
-            </span>
-            <span className="step-body">
-              <span className="step-label">Working…</span>
-            </span>
-          </li>
-        )}
       </ul>
     </div>
   );
@@ -103,9 +112,76 @@ export default function App() {
   const [askedQuestion, setAskedQuestion] = useState("");
   const [typedAnswer, setTypedAnswer] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [liveStageIndex, setLiveStageIndex] = useState(0);
+  const [liveSteps, setLiveSteps] = useState([]);
+  // Mirror of liveSteps — refs avoid stale closure issues inside the
+  // streaming callbacks + optimistic interval.
+  const liveStepsRef = useRef([]);
+  // Whether the agent has signaled a real retry (decide_0 returned retry).
+  // Only in that case do we allow the optimistic preview to move past
+  // decide_0 → retrieve_1 / decide_1 (so "search again" never appears on a
+  // 1-pass answer).
+  const retryUnlockedRef = useRef(false);
+  const liveStepScriptRef = useRef(STEP_SCRIPT);
 
   const textareaRef = useRef(null);
+
+  useEffect(() => {
+    liveStepsRef.current = liveSteps;
+  }, [liveSteps]);
+
+  /**
+   * While a request is in flight, project a single optimistic "running"
+   * step placeholder for whatever the backend should do next. It is keyed
+   * by `id` so the real `step:done` event from the backend replaces it
+   * cleanly. On a 1-pass answer, retrieve_1 / decide_1 will never appear
+   * because `retryUnlockedRef` keeps the projection clamped before them —
+   * matching real agent behaviour.
+   */
+  useEffect(() => {
+    if (!loading) return undefined;
+    const label = "projected";
+    const ADVANCE_MS = 900; // same cadence as the original LIVE_STAGES pulse
+    const lastAdvance = { t: Date.now() };
+    const tick = () => {
+      const doneIds = new Set(
+        liveStepsRef.current
+          .filter((s) => s.status === "done" || s.status === "error")
+          .map((s) => s.id)
+      );
+      const script = liveStepScriptRef.current;
+      const retryUnlocked = retryUnlockedRef.current;
+      // Find the next script id that hasn't been marked done yet, honouring
+      // the retry gate for retrieve_1 / decide_1.
+      let nextId = null;
+      for (const s of script) {
+        if (doneIds.has(s.id)) continue;
+        if (!retryUnlocked && (s.id === "retrieve_1" || s.id === "decide_1")) break;
+        nextId = s.id;
+        break;
+      }
+      if (!nextId) return;
+      // Only append a projected "running" row if the backend hasn't sent a
+      // real `running` row for the same id yet.
+      const anySameId = liveStepsRef.current.some((s) => s.id === nextId);
+      if (!anySameId) {
+        const projected = {
+          id: nextId,
+          label: STEP_LABEL_BY_ID[nextId] || nextId,
+          status: "running",
+          _projected: true,
+        };
+        setLiveSteps((prev) => {
+          if (prev.some((s) => s.id === nextId)) return prev;
+          return [...prev, projected];
+        });
+        liveStepsRef.current = [...liveStepsRef.current, projected];
+      }
+      lastAdvance.t = Date.now();
+    };
+    tick(); // first step immediately
+    const id = setInterval(tick, ADVANCE_MS);
+    return () => clearInterval(id);
+  }, [loading]);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -113,16 +189,6 @@ export default function App() {
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 200) + "px";
   }, [input]);
-
-  // Cycle optimistic stages while waiting for /predict
-  useEffect(() => {
-    if (!loading) return;
-    setLiveStageIndex(0);
-    const id = setInterval(() => {
-      setLiveStageIndex((i) => Math.min(i + 1, LIVE_STAGES.length - 1));
-    }, 900);
-    return () => clearInterval(id);
-  }, [loading]);
 
   useEffect(() => {
     if (!result?.answer) {
@@ -155,21 +221,128 @@ export default function App() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setLiveSteps([]);
+    liveStepsRef.current = [];
+    retryUnlockedRef.current = false;
+    liveStepScriptRef.current = STEP_SCRIPT;
+
+    let finished = false;
+    let settled = false;
+
+    const fallback = async () => {
+      if (settled) return;
+      settled = true;
+      try {
+        const res = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userInput: question }),
+        });
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data.message || data.error || "Request failed");
+        // Retry hint: if the server's meta.steps contains a retrieve_1
+        // entry, the user still saw a 2-pass flow in the fallback trail.
+        setResult(data);
+        setLiveSteps(data.meta?.steps || []);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    let url;
     try {
-      const res = await fetch("/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userInput: question }),
-      });
-      const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.message || data.error || "Request failed");
-      setResult(data);
+      url = `/predict/stream?q=${encodeURIComponent(question)}`;
     } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
+      await fallback();
+      return;
     }
+
+    let es;
+    try {
+      es = new EventSource(url);
+    } catch (e) {
+      await fallback();
+      return;
+    }
+
+    es.onmessage = (evt) => {
+      if (finished) return;
+      let data;
+      try {
+        data = JSON.parse(evt.data);
+      } catch {
+        return;
+      }
+
+      if (data.type === "manifest" && Array.isArray(data.steps)) {
+        // Backend can override the optimistic script via manifest event.
+        liveStepScriptRef.current = data.steps.map((id) => ({
+          id,
+          label: STEP_LABEL_BY_ID[id] || id,
+        }));
+      }
+
+      if (data.type === "step") {
+        const step = data.step;
+        if (!step) return;
+        // If decide_0 came back "done" with a retry label, unlock the
+        // 2nd-pass optimistic rows so the UI can show retrieve_1 running.
+        if (
+          step.id === "decide_0" &&
+          step.status === "done" &&
+          typeof step.label === "string" &&
+          /retry|search again/i.test(step.label)
+        ) {
+          retryUnlockedRef.current = true;
+        }
+        // If smalltalk came back done, skip the RAG script entirely:
+        // don't show phantom retrieve/generate rows after smalltalk.
+        if (step.id === "smalltalk" && step.status === "done") {
+          liveStepScriptRef.current = STEP_SCRIPT.filter(
+            (s) =>
+              ["moderate", "smalltalk"].includes(s.id) ||
+              liveStepsRef.current.some((x) => x.id === s.id)
+          );
+        }
+        // Upsert this step by id — replaces any prior placeholder with the
+        // real backend-sent row.
+        setLiveSteps((prev) => {
+          const without = prev.filter((s) => s.id !== step.id);
+          const next = [...without, step];
+          liveStepsRef.current = next;
+          return next;
+        });
+      }
+
+      if (data.type === "result") {
+        finished = true;
+        setResult(data.result);
+        setLiveSteps(data.result?.meta?.steps || []);
+        setLoading(false);
+        try {
+          es.close();
+        } catch {}
+      }
+
+      if (data.type === "end") {
+        setLoading(false);
+        try {
+          es.close();
+        } catch {}
+      }
+    };
+
+    es.onerror = () => {
+      try {
+        es.close();
+      } catch {}
+      if (!finished) {
+        fallback();
+      }
+    };
   };
 
   const handleKeyDown = (e) => {
@@ -179,7 +352,16 @@ export default function App() {
     }
   };
 
-  const realSteps = result?.meta?.steps || [];
+  const realSteps = (() => {
+    const raw = liveSteps.length ? liveSteps : result?.meta?.steps || [];
+    if (!raw?.length) return raw;
+    const order = new Map(STEP_SCRIPT.map((s, i) => [s.id, i]));
+    return [...raw].sort((a, b) => {
+      const ai = order.has(a.id) ? order.get(a.id) : 9999;
+      const bi = order.has(b.id) ? order.get(b.id) : 9999;
+      return ai - bi;
+    });
+  })();
   const attempts = result?.meta?.attempts ?? 0;
 
   const composer = (
@@ -524,12 +706,13 @@ export default function App() {
             <div className="results-wrap">
               <div className="question-echo">{askedQuestion}</div>
 
-              {/* While waiting: optimistic stages. After response: real meta.steps */}
+              {/* Activity panel — steps streamed live from backend during the
+                  request, then final `meta.steps` rendered as a static trail. */}
               {(loading || realSteps.length > 0) && (
                 <AgentActivity
                   loading={loading}
-                  steps={loading ? null : realSteps}
-                  liveLabel={loading ? LIVE_STAGES[liveStageIndex] : null}
+                  steps={realSteps}
+                  liveLabel={null}
                 />
               )}
 
