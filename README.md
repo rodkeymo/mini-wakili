@@ -1,12 +1,11 @@
-# Mini-Wakili — Legal Research Agent (Take-Home)
+# Mini-Wakili — Legal Research Agent
 
-A minimal but working **legal-research agent** built for the NCBA Group / Project Wakili technical assessment.
+A minimal but working **legal-research agent**
 
 It answers legal questions over a grounded corpus of Kenyan statutes, retrieves relevant passages, generates cited answers, refuses when unsupported, and includes one agentic behaviour (re-query on low confidence).
 
 **Stack:** Python · LangChain-style control loop · Chroma · Flask · React (optional UI)
 
-**No n8n** — the agent runs as a self-contained Flask service.
 
 ---
 
@@ -128,4 +127,4 @@ mini-wakili/
 
 - Corpus contains key excerpts for demonstration. Replace with full approved, versioned texts for production.
 - No secrets are committed. Use environment variables.
-- See DESIGN.md for architecture, trade-offs, and how to harden for bank use.
+- See DESIGN.md for architecture, trade-offs, and how to harden for enterprise use.
