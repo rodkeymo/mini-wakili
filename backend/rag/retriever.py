@@ -1,4 +1,4 @@
-"""Hybrid-ish retrieval over the local Chroma store."""
+"""Retrieval over the local Chroma store."""
 
 from __future__ import annotations
 
@@ -19,34 +19,29 @@ def _get_collection():
     global _client, _collection
     if _collection is not None:
         return _collection
-
     if not CHROMA_DIR.exists():
         raise RuntimeError(
-            f"Vector store not found at {CHROMA_DIR}. "
-            "Run `python -m rag.ingest` first."
+            f"Vector store not found at {CHROMA_DIR}. Run `python -m rag.ingest` first."
         )
-
     ef = embedding_functions.DefaultEmbeddingFunction()
     _client = PersistentClient(path=str(CHROMA_DIR))
-    _collection = _client.get_collection(
-        name=COLLECTION_NAME,
-        embedding_function=ef,
-    )
+    _collection = _client.get_collection(name=COLLECTION_NAME, embedding_function=ef)
     return _collection
 
 
-def hybrid_search(query: str, top_k: int = 6) -> List[Dict[str, Any]]:
-    """
-    Dense retrieval via Chroma. Returns normalised results:
-    [{id, text, metadata, score}, ...]
-    Score is similarity in [0, 1] (1 = best).
-    """
-    collection = _get_collection()
-    results = collection.query(
-        query_texts=[query],
-        n_results=min(top_k, collection.count() or top_k),
-        include=["documents", "metadatas", "distances"],
-    )
+def hybrid_search(query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    try:
+        collection = _get_collection()
+        count = collection.count()
+        if count == 0:
+            return []
+        results = collection.query(
+            query_texts=[query],
+            n_results=min(top_k, count),
+            include=["documents", "metadatas", "distances"],
+        )
+    except Exception as e:
+        raise RuntimeError(f"Retrieval failed: {e}") from e
 
     hits: List[Dict[str, Any]] = []
     if not results or not results.get("ids") or not results["ids"][0]:
@@ -58,16 +53,16 @@ def hybrid_search(query: str, top_k: int = 6) -> List[Dict[str, Any]]:
     dists = results["distances"][0]
 
     for i, doc_id in enumerate(ids):
-        # Chroma cosine distance → approximate similarity
         dist = float(dists[i]) if dists else 1.0
         score = max(0.0, 1.0 - dist)
-        hits.append({
-            "id": doc_id,
-            "text": docs[i] or "",
-            "metadata": metas[i] or {},
-            "score": score,
-        })
+        hits.append(
+            {
+                "id": doc_id,
+                "text": docs[i] or "",
+                "metadata": metas[i] or {},
+                "score": score,
+            }
+        )
 
-    # Sort by score descending
     hits.sort(key=lambda x: x["score"], reverse=True)
     return hits

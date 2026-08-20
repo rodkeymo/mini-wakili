@@ -1,30 +1,35 @@
-"""Confidence scoring and refusal logic."""
+"""Confidence scoring and refusal gates."""
 
 from __future__ import annotations
 
 from typing import Any, Dict, List
 
-# Tunable thresholds for the take-home
 MIN_TOP_SCORE = 0.35
-MIN_AVG_TOP3 = 0.30
+MIN_AVG_TOP3 = 0.28
+MIN_CONFIDENCE = 0.32
 
 
 def compute_confidence(hits: List[Dict[str, Any]]) -> float:
     if not hits:
         return 0.0
-    scores = [float(h.get("score", 0.0)) for h in hits]
+    scores = [float(h.get("score") or 0.0) for h in hits]
     top = scores[0]
-    avg_top3 = sum(scores[:3]) / min(3, len(scores))
-    # Weighted combination
-    return 0.6 * top + 0.4 * avg_top3
+    top3 = scores[:3]
+    avg3 = sum(top3) / len(top3)
+    return max(0.0, min(1.0, 0.6 * top + 0.4 * avg3))
 
 
-def should_refuse(hits: List[Dict[str, Any]], confidence: float) -> bool:
+def should_refuse(hits: List[Dict[str, Any]], conf: float | None = None) -> bool:
     if not hits:
         return True
-    top = float(hits[0].get("score", 0.0))
+    top = float(hits[0].get("score") or 0.0)
+    scores = [float(h.get("score") or 0.0) for h in hits[:3]]
+    avg3 = sum(scores) / len(scores) if scores else 0.0
+    c = conf if conf is not None else compute_confidence(hits)
     if top < MIN_TOP_SCORE:
         return True
-    if confidence < MIN_AVG_TOP3:
+    if avg3 < MIN_AVG_TOP3:
+        return True
+    if c < MIN_CONFIDENCE:
         return True
     return False

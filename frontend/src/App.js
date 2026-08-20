@@ -80,7 +80,9 @@ function AgentActivity({ steps, liveLabel, loading }) {
         ))}
         {loading && steps?.length > 0 && (
           <li className="step step-running">
-            <span className="step-icon"><span className="spinner" /></span>
+            <span className="step-icon">
+              <span className="spinner" />
+            </span>
             <span className="step-body">
               <span className="step-label">Working…</span>
             </span>
@@ -160,7 +162,8 @@ export default function App() {
         body: JSON.stringify({ userInput: question }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.error || "Request failed");
+      if (!res.ok)
+        throw new Error(data.message || data.error || "Request failed");
       setResult(data);
     } catch (e) {
       setError(e.message);
@@ -205,7 +208,9 @@ export default function App() {
           )}
         </button>
       </div>
-      <div className="hint">Press Enter to send, Shift+Enter for a new line</div>
+      <div className="hint">
+        Press Enter to send, Shift+Enter for a new line
+      </div>
     </div>
   );
 
@@ -534,15 +539,19 @@ export default function App() {
                 <div className={`result status-${result.status}`}>
                   <div className="meta">
                     <span className="badge">{result.status}</span>
-                    <span>Confidence: {(result.confidence * 100).toFixed(0)}%</span>
-                    {attempts > 0 && (
+                    <span>
+                      Confidence: {(result.confidence * 100).toFixed(0)}%
+                    </span>
+                    {(result.meta?.attempts ?? 0) > 0 && (
                       <span className="retry-badge">
-                        Searched again ({attempts} re-query)
+                        Searched again ({result.meta.attempts} re-query)
                       </span>
                     )}
                   </div>
 
-                  {result.message && <p className="message">{result.message}</p>}
+                  {result.message && (
+                    <p className="message">{result.message}</p>
+                  )}
 
                   {result.answer && (
                     <div className="answer">
@@ -554,19 +563,43 @@ export default function App() {
                     </div>
                   )}
 
-                  {!isTyping && result.citations?.length > 0 && (
-                    <div className="citations">
-                      <h3>Citations</h3>
-                      <ul>
-                        {result.citations.map((c, i) => (
-                          <li key={i}>
-                            <strong>[{c.source_id}]</strong> (score {c.score.toFixed(2)})
-                            <p>{c.passage}</p>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  {!isTyping &&
+                    result.status === "ok" &&
+                    result.citations?.length > 0 && (
+                      <div className="citations">
+                        <h3>Citations</h3>
+                        <ul>
+                          {result.citations.map((c, i) => (
+                            <li key={i}>
+                              <strong>[{c.source_id}]</strong> (score{" "}
+                              {c.score.toFixed(2)})<p>{c.passage}</p>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                  {result.status !== "ok" &&
+                    result.suggested_topics?.length > 0 && (
+                      <div className="topics">
+                        <h3>
+                          Topics you can ask about from the available sources
+                        </h3>
+                        <ol>
+                          {result.suggested_topics.slice(0, 8).map((t, i) => (
+                            <li key={i}>
+                              <button
+                                type="button"
+                                className="topic-chip"
+                                onClick={() => setInput(`Tell me about: ${t}`)}
+                              >
+                                {t}
+                              </button>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
                 </div>
               )}
             </div>

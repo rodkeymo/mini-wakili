@@ -1,63 +1,57 @@
-"""
-Mini-Wakili Flask API.
-Keeps the original ByteGenie /predict shape so the React frontend
-(and n8n) can call it with minimal change.
-"""
+"""Flask API for Mini-Wakili."""
 
 from __future__ import annotations
 
 import os
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from dotenv import load_dotenv
 
-from agent.graph import run_agent
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 load_dotenv()
+
+from agent.graph import run_agent
 
 app = Flask(__name__)
 CORS(app)
 
 
-@app.route("/health", methods=["GET"])
+@app.get("/health")
 def health():
-    return jsonify({"status": "ok", "service": "mini-wakili"})
+    return jsonify({"status": "ok"})
 
 
-@app.route("/predict", methods=["POST"])
+@app.post("/predict")
 def predict():
-    """
-    Expected body: {"userInput": "<legal question>"}
-    Returns structured answer with citations and confidence.
-    """
     data = request.get_json(silent=True) or {}
-    question = data.get("userInput") or data.get("query") or data.get("question")
+    question = (data.get("userInput") or data.get("question") or "").strip()
+    if not question:
+        return jsonify(
+            {
+                "answer": None,
+                "citations": [],
+                "confidence": 0.0,
+                "status": "error",
+                "message": "userInput is required",
+                "suggested_topics": [],
+            }
+        ), 400
 
-    if not question or not str(question).strip():
-        return jsonify({"error": "No query provided", "status": "error"}), 400
+    result = run_agent(question)
+    code = 200 if result.get("status") != "error" else 500
+    return jsonify(result), code
 
+
+def _warm_rag():
     try:
-        result = run_agent(str(question).strip())
-        return jsonify(result)
-    except Exception as exc:
-        return jsonify({
-            "answer": None,
-            "citations": [],
-            "confidence": 0.0,
-            "status": "error",
-            "message": str(exc),
-        }), 500
-
-
-@app.route("/fine_tune", methods=["POST"])
-def fine_tune_stub():
-    """Original ByteGenie endpoint kept as a no-op for compatibility."""
-    return jsonify({
-        "message": "Fine-tuning is not used in Mini-Wakili. "
-                   "Use RAG + system prompt instead."
-    }), 200
+        from rag.retriever import hybrid_search
+        hybrid_search("warmup", top_k=1)
+        print("RAG warmed up")
+    except Exception as e:
+        print(f"RAG warmup skipped: {e}")
 
 
 if __name__ == "__main__":
+    _warm_rag()
     port = int(os.getenv("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)

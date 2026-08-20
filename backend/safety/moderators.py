@@ -1,59 +1,38 @@
-"""Simple input / output moderation for the take-home."""
+"""Input and output safety moderators."""
 
 from __future__ import annotations
 
 import re
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
-# Patterns that should never enter a legal research agent
-INJECTION_PATTERNS = [
-    r"ignore\s+(all\s+)?previous\s+instructions",
-    r"disregard\s+(the\s+)?system\s+prompt",
-    r"you\s+are\s+now\s+dan",
-    r"jailbreak",
-]
+_INJECTION = re.compile(
+    r"(ignore\s+(all\s+)?(previous|prior)\s+instructions|"
+    r"system\s+prompt|jailbreak|dan\s+mode|"
+    r"reveal\s+your\s+(system|hidden)\s+prompt)",
+    re.I,
+)
 
-# Output that looks like a definitive legal opinion without human review
-OVERCONFIDENT_PATTERNS = [
-    r"this\s+is\s+(a\s+)?(final|binding)\s+(legal\s+)?opinion",
-    r"you\s+should\s+definitely\s+sue",
-    r"the\s+contract\s+is\s+definitely\s+void",
-]
+_FINAL_OPINION = re.compile(
+    r"\b(this\s+is\s+(final|binding)\s+legal\s+advice|"
+    r"you\s+must\s+definitely|"
+    r"guaranteed\s+to\s+win\s+in\s+court)\b",
+    re.I,
+)
 
 
 def moderate_input(text: str) -> Tuple[bool, str]:
-    """
-    Returns (ok, reason).
-    Blocks obvious prompt-injection style inputs.
-    """
-    lower = text.lower()
-    for pat in INJECTION_PATTERNS:
-        if re.search(pat, lower):
-            return False, "Input rejected by safety filter (possible prompt injection)."
-
-    if len(text.strip()) < 3:
-        return False, "Query too short."
-
+    q = (text or "").strip()
+    if len(q) < 3:
+        return False, "Please enter a clearer legal research question."
+    if _INJECTION.search(q):
+        return False, "Request blocked by input safety checks."
     return True, ""
 
 
-def moderate_output(answer: str, citations: List[dict]) -> Tuple[bool, str]:
-    """
-    Returns (ok, reason).
-    - Rejects empty answers that claim success
-    - Flags clearly over-confident absolute legal conclusions
-    """
-    if not answer or not answer.strip():
-        return False, "Empty answer blocked."
-
-    lower = answer.lower()
-    for pat in OVERCONFIDENT_PATTERNS:
-        if re.search(pat, lower):
-            return False, (
-                "Answer rejected: appears to present a definitive legal conclusion. "
-                "Wakili only prepares drafts for lawyer review."
-            )
-
-    # Soft check: if we have citations they should be present in the text
-    # (already handled more strictly in the verify node)
+def moderate_output(answer: str, citations: List[Dict[str, Any]]) -> Tuple[bool, str]:
+    a = (answer or "").strip()
+    if not a:
+        return False, "Empty model output blocked."
+    if _FINAL_OPINION.search(a):
+        return False, "Output blocked: language resembles a final legal opinion."
     return True, ""

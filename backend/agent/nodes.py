@@ -1,4 +1,4 @@
-"""LangGraph-style node functions for Mini-Wakili (with NVIDIA LLM support)."""
+"""LangGraph-style node functions for Mini-Wakili (NVIDIA + refusal topics)."""
 
 from __future__ import annotations
 
@@ -10,10 +10,11 @@ from agent.state import AgentState
 from agent.tools import search_legal_corpus, refine_query
 from safety.moderators import moderate_input, moderate_output
 from safety.confidence import compute_confidence, should_refuse
+from rag.topics import list_corpus_topics
 
-# Minimum similarity to proceed without re-query
 RETRIEVAL_THRESHOLD = 0.42
 MAX_ATTEMPTS = 2
+REFUSAL_PHRASE = "I cannot answer from the available approved sources."
 
 SYSTEM_PROMPT = """You are Wakili, a legal research assistant for a Kenyan bank.
 Answer ONLY using the passages provided below.
@@ -26,15 +27,7 @@ Answer ONLY using the passages provided below.
 """
 
 
-# ---------------------------------------------------------------------------
-# LLM helper (NVIDIA first → OpenAI → deterministic fallback)
-# ---------------------------------------------------------------------------
-
 def _get_chat_llm():
-    """
-    Returns a LangChain Chat model, or None if no API key is configured.
-    Prefers NVIDIA (OpenAI-compatible endpoint), then OpenAI.
-    """
     nvidia_key = os.getenv("NVIDIA_API_KEY")
     if nvidia_key:
         try:
@@ -64,23 +57,16 @@ def _get_chat_llm():
             )
         except Exception:
             pass
-
     return None
 
 
 def _simple_grounded_answer(question: str, hits: List[Dict[str, Any]]) -> str:
-    """
-    Deterministic fallback when no LLM API key is available.
-    Keeps the take-home runnable offline.
-    """
     if not hits:
-        return "I cannot answer from the available approved sources."
-
+        return REFUSAL_PHRASE
     top = hits[0]
     sid = top.get("id", "src_1")
     text = (top.get("text") or "").strip()
     snippet = text[:350] + ("…" if len(text) > 350 else "")
-
     return (
         f"Based on the available sources, the following is relevant to your question "
         f"(\"{question}\"):\n\n"
@@ -91,10 +77,6 @@ def _simple_grounded_answer(question: str, hits: List[Dict[str, Any]]) -> str:
 
 
 def _llm_grounded_answer(question: str, hits: List[Dict[str, Any]]) -> str:
-    """
-    Call NVIDIA / OpenAI with a strict grounding prompt.
-    Falls back to the deterministic answerer on any failure.
-    """
     llm = _get_chat_llm()
     if llm is None:
         return _simple_grounded_answer(question, hits)
@@ -108,6 +90,7 @@ def _llm_grounded_answer(question: str, hits: List[Dict[str, Any]]) -> str:
     try:
         from langchain_core.messages import SystemMessage, HumanMessage
 
+        memory = ""  # optional: state memory injected by graph if you add it
         messages = [
             SystemMessage(content=SYSTEM_PROMPT),
             HumanMessage(
@@ -118,13 +101,29 @@ def _llm_grounded_answer(question: str, hits: List[Dict[str, Any]]) -> str:
         text = response.content if hasattr(response, "content") else str(response)
         return (text or "").strip() or _simple_grounded_answer(question, hits)
     except Exception:
-        # Network / auth / rate-limit → degrade gracefully
         return _simple_grounded_answer(question, hits)
 
 
-# ---------------------------------------------------------------------------
-# Nodes
-# ---------------------------------------------------------------------------
+def _is_refusal_answer(answer: str | None) -> bool:
+    if not answer:
+        return True
+    a = answer.strip().lower()
+    return (
+        a == REFUSAL_PHRASE.lower()
+        or "cannot answer from the available approved sources" in a
+    )
+
+
+def _refusal_state(state: AgentState, message: str) -> AgentState:
+    return {
+        **state,
+        "answer": None,
+        "citations": [],
+        "status": "low_confidence",
+        "message": message,
+        "suggested_topics": list_corpus_topics(8),
+    }
+
 
 def node_moderate_input(state: AgentState) -> AgentState:
     ok, reason = moderate_input(state["question"])
@@ -137,21 +136,18 @@ def node_moderate_input(state: AgentState) -> AgentState:
             "citations": [],
             "confidence": 0.0,
             "moderated_input": False,
+            "suggested_topics": list_corpus_topics(8),
         }
     return {**state, "moderated_input": True, "attempt": state.get("attempt", 0)}
 
 
 def node_retrieve(state: AgentState) -> AgentState:
     q = state.get("refined_question") or state["question"]
-    hits = search_legal_corpus(q, top_k=6)
+    hits = search_legal_corpus(q, top_k=5)
     return {**state, "retrieved": hits}
 
 
 def node_decide(state: AgentState) -> AgentState:
-    """
-    Agentic decision: if retrieval is weak and attempts remain,
-    refine the query and signal another retrieval round.
-    """
     hits = state.get("retrieved") or []
     attempt = state.get("attempt", 0)
     conf = compute_confidence(hits)
@@ -174,19 +170,16 @@ def node_generate(state: AgentState) -> AgentState:
     conf = state.get("confidence", 0.0)
 
     if should_refuse(hits, conf):
-        return {
-            **state,
-            "answer": None,
-            "citations": [],
-            "status": "low_confidence",
-            "message": (
-                "The corpus does not contain sufficiently relevant material "
-                "to answer safely. Please rephrase or consult a qualified lawyer."
-            ),
-        }
+        return _refusal_state(
+            state,
+            "The corpus does not contain sufficiently relevant material "
+            "to answer safely. Please rephrase or ask about one of the topics below.",
+        )
 
-    # Prefer NVIDIA / OpenAI; fall back to deterministic grounded answer
     answer = _llm_grounded_answer(state["question"], hits)
+
+    if _is_refusal_answer(answer):
+        return _refusal_state(state, REFUSAL_PHRASE)
 
     citations = [
         {
@@ -203,17 +196,24 @@ def node_generate(state: AgentState) -> AgentState:
         "citations": citations,
         "status": "ok",
         "message": None,
+        "suggested_topics": [],
     }
 
 
 def node_verify_and_moderate(state: AgentState) -> AgentState:
     if state.get("status") in ("low_confidence", "refused", "error"):
-        return state
+        return {
+            **state,
+            "citations": [],
+            "suggested_topics": state.get("suggested_topics") or list_corpus_topics(8),
+        }
 
     answer = state.get("answer") or ""
     citations = state.get("citations") or []
 
-    # Citation faithfulness: every [source_id] in the answer must exist
+    if _is_refusal_answer(answer):
+        return _refusal_state(state, REFUSAL_PHRASE)
+
     cited_ids = set(re.findall(r"\[([^\]]+)\]", answer))
     available = {c["source_id"] for c in citations}
     missing = cited_ids - available
@@ -231,11 +231,14 @@ def node_verify_and_moderate(state: AgentState) -> AgentState:
             "status": "refused",
             "message": reason,
             "moderated_output": False,
+            "suggested_topics": list_corpus_topics(8),
         }
 
     return {
         **state,
         "answer": answer,
+        "citations": citations,
         "status": "ok",
         "moderated_output": True,
+        "suggested_topics": [],
     }

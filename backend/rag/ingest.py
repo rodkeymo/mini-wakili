@@ -1,11 +1,7 @@
-"""
-Ingest sample legal corpus into a local Chroma vector store.
-Run once:  python -m rag.ingest
-"""
+"""Ingest statute .txt files into Chroma."""
 
 from __future__ import annotations
 
-import os
 import re
 from pathlib import Path
 
@@ -15,83 +11,69 @@ from chromadb.utils import embedding_functions
 CORPUS_DIR = Path(__file__).resolve().parent.parent / "data" / "legal_corpus"
 CHROMA_DIR = Path(__file__).resolve().parent.parent / "data" / "chroma_db"
 COLLECTION_NAME = "wakili_legal"
+CHUNK_SIZE = 600
+CHUNK_OVERLAP = 80
 
 
-def chunk_text(text: str, max_chars: int = 600, overlap: int = 80) -> list[str]:
-    """Simple character-based chunker with overlap."""
+def _chunk_text(text: str, source: str) -> list[dict]:
     text = re.sub(r"\s+", " ", text).strip()
-    if len(text) <= max_chars:
-        return [text] if text else []
-
     chunks = []
     start = 0
+    idx = 0
     while start < len(text):
-        end = start + max_chars
-        chunk = text[start:end].strip()
-        if chunk:
-            chunks.append(chunk)
-        start = end - overlap
-        if start >= len(text):
+        end = min(start + CHUNK_SIZE, len(text))
+        piece = text[start:end].strip()
+        if piece:
+            chunks.append(
+                {
+                    "id": f"{source}_c{idx}",
+                    "text": piece,
+                    "metadata": {"source": source, "act": source, "chunk": idx},
+                }
+            )
+            idx += 1
+        if end >= len(text):
             break
+        start = end - CHUNK_OVERLAP
     return chunks
 
 
-def load_documents() -> list[dict]:
-    docs = []
-    for path in sorted(CORPUS_DIR.glob("*.txt")):
-        raw = path.read_text(encoding="utf-8")
-        # First line can be a title / metadata hint
-        lines = raw.strip().split("\n", 1)
-        title = lines[0].strip().lstrip("# ").strip()
-        body = lines[1].strip() if len(lines) > 1 else raw
-
-        for i, chunk in enumerate(chunk_text(body)):
-            doc_id = f"{path.stem}_c{i}"
-            docs.append({
-                "id": doc_id,
-                "text": chunk,
-                "metadata": {
-                    "source_file": path.name,
-                    "title": title,
-                    "chunk_index": i,
-                },
-            })
-    return docs
-
-
-def ingest() -> None:
-    CORPUS_DIR.mkdir(parents=True, exist_ok=True)
+def ingest() -> int:
     CHROMA_DIR.mkdir(parents=True, exist_ok=True)
-
-    docs = load_documents()
-    if not docs:
-        print(f"No documents found in {CORPUS_DIR}. Add .txt files first.")
-        return
-
-    # Use a lightweight default embedding function so the project runs
-    # without an external API key. Swap for OpenAI / Voyage later.
     ef = embedding_functions.DefaultEmbeddingFunction()
-
     client = PersistentClient(path=str(CHROMA_DIR))
-    # Recreate collection for clean re-ingest
+
     try:
         client.delete_collection(COLLECTION_NAME)
     except Exception:
         pass
 
-    collection = client.create_collection(
+    collection = client.get_or_create_collection(
         name=COLLECTION_NAME,
         embedding_function=ef,
         metadata={"hnsw:space": "cosine"},
     )
 
-    collection.add(
-        ids=[d["id"] for d in docs],
-        documents=[d["text"] for d in docs],
-        metadatas=[d["metadata"] for d in docs],
-    )
+    all_docs: list[dict] = []
+    for path in sorted(CORPUS_DIR.glob("*.txt")):
+        raw = path.read_text(encoding="utf-8", errors="ignore")
+        all_docs.extend(_chunk_text(raw, path.stem))
 
-    print(f"Ingested {len(docs)} chunks into '{COLLECTION_NAME}' at {CHROMA_DIR}")
+    if not all_docs:
+        print(f"No .txt files in {CORPUS_DIR}")
+        return 0
+
+    batch = 100
+    for i in range(0, len(all_docs), batch):
+        part = all_docs[i : i + batch]
+        collection.add(
+            ids=[d["id"] for d in part],
+            documents=[d["text"] for d in part],
+            metadatas=[d["metadata"] for d in part],
+        )
+
+    print(f"Ingested {len(all_docs)} chunks into '{COLLECTION_NAME}' at {CHROMA_DIR}")
+    return len(all_docs)
 
 
 if __name__ == "__main__":

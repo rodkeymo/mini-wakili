@@ -1,14 +1,8 @@
-"""Shared state for the LangGraph agent."""
+"""Shared agent state."""
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, TypedDict
-
-
-class Citation(TypedDict):
-    source_id: str
-    passage: str
-    score: float
 
 
 class AgentState(TypedDict, total=False):
@@ -16,10 +10,14 @@ class AgentState(TypedDict, total=False):
     refined_question: Optional[str]
     retrieved: List[Dict[str, Any]]
     answer: Optional[str]
-    citations: List[Citation]
+    citations: List[Dict[str, Any]]
     confidence: float
-    status: str          # ok | low_confidence | refused | error
+    status: str
     message: Optional[str]
-    attempt: int         # for re-query loop
+    attempt: int
     moderated_input: bool
     moderated_output: bool
+    suggested_topics: List[str]
+    matter_id: str
+    session_id: str
+    memory_text: str
