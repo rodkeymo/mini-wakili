@@ -23,6 +23,10 @@ pip install -r requirements.txt
 # The take-home runs without any key using a deterministic grounded answerer.
 export OPENAI_API_KEY=sk-...
 export OPENAI_BASE_URL=https://api.openai.com/v1
+# NVIDIA API (OpenAI-compatible)
+export NVIDIA_API_KEY=nvapi-your-key-here
+export NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+export NVIDIA_MODEL=meta/llama-3.1-70b-instruct
 
 # Ingest the statute corpus (creates Chroma vector store)
 python -m rag.ingest
